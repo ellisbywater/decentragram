@@ -14,9 +14,15 @@ contract Decentragram {
     uint tipAmount;
     address payable author;
   }  
-
   event ImageCreated (
     uint id,
+    string hash,
+    string description,
+    uint tipAmount,
+    address payable author
+  );
+  event ImageTipped(
+    uint id, 
     string hash,
     string description,
     uint tipAmount,
@@ -25,6 +31,13 @@ contract Decentragram {
 
   // Create Images
   function uploadImage(string memory _imageHash, string memory _description) public {
+    // Make sure image has exists
+    require(bytes(_imageHash).length > 0);
+    // Make sure image description exists
+    require(bytes(_description).length > 0);
+    // Make sure uploader address exists
+    require(msg.sender != address(0x0));
+
     imageCount = imageCount++;
     images[imageCount] = Image(imageCount, _imageHash, _description, 0, msg.sender);
 
@@ -33,6 +46,18 @@ contract Decentragram {
   }
 
   // Tip Images
-
+  function tipImageOwner(uint _id) public payable {
+    Image memory _image = images[_id];
+    // Fetch the author
+    address payable _author = _image.author;
+    // Pay the author by sending them Ether
+    address(_author).transfer(msg.value);
+    // Increment the tip amount
+    _image.tipAmount = _image.tipAmount + msg.value;
+    // update the image
+    images[_id] = _image;
+    // Trigger tip event
+    emit ImageTipped(_id, _image.hash, _image.description, _image.tipAmount, _author);
+  }
 
 }
